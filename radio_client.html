@@ -17,12 +17,15 @@
         }
 
     </style>
+
+    <Title> Arch Piano </Title>
 </head>
 <body id="body">
+
     <div >
 
-        <h1 id="title" style="display:inline-block;">Port 88</h1>
-        <input type="text" placeholder="username" />
+        <h1 id="title" style="display:inline-block;">Arch Piano</h1>
+        <!--<input type="text" placeholder="username" />-->
         <button  id="connect"  onclick="null"></button>
     </div>
     <script src="soundfont-player.min.js"></script>
@@ -31,7 +34,7 @@
     <canvas id='canvasBack' width='100%' height='100%'></canvas>
 
     <script type="text/javascript">
-
+      
 
         let body = document.getElementById('title');
         body.onclick = function () {
@@ -90,7 +93,9 @@
         let lastDownTime = [];
         let pressed = [];
         let node = [];
+        let keyColors = [];
 
+        
         function connectPiano(device) {
             device.onmidimessage = function (m) {
                 const [command, key, velocity] = m.data;
@@ -183,19 +188,25 @@
 
         let canvas = document.getElementById('canvasBack');
 
-
         let ctx = canvas.getContext('2d');
-
+    
         window.requestAnimationFrame(update);
 
         let width = canvas.width = window.innerWidth;
         let height = canvas.height = window.innerHeight;
         let ticks = 0;
+        var background = new Image();
+        background.src = "https://www.fnordware.com/superpng/pnggradHDrgba.png";
+
+        
         function update() {
             var time = new Date().getTime();
+             ctx.drawImage(background, 0, 0);
+            //ctx.fillStyle = 'black';
+            
+            //ctx.fillRect(0, 0, width, height);
 
-            ctx.fillStyle = 'black';
-            ctx.fillRect(0, 0, width, height);
+
 
             ticks += 2;
 
@@ -279,10 +290,11 @@
                         name = 'B';
                         break;
                 }
-
+                //piano outline
                 ctx.fillStyle = 'white';
                 ctx.fillRect(left, top, width, height);
 
+                //piano interior
                 ctx.fillStyle = 'black';
                 ctx.fillText(name, left + 12, top + height - 6);
 
@@ -302,10 +314,12 @@
                         ctx.fillRect(left + 2, top + 2, width - 4, height - 4);
 
                     }
-                    ctx.fillStyle = 'white';
+                    //Piano falling colors
+                    ctx.fillStyle = 'hsl(' + 360 * Math.random() + ', 50%, 50%)';
                     //Bar under key
                     ctx.fillRect(left, top + height, width, (time - lastTime) * bps * 160 / 1000);
                 } else {
+                    //overall piano color
                     ctx.fillStyle = 'black';
                     ctx.fillRect(left + 2, top + 2, width - 4, height - 4);
 
@@ -320,7 +334,7 @@
                         ctx.fillRect(left + 2, top + 2, width - 4, height - 4);
                     }
 
-
+                    //Piano Text
                     ctx.fillStyle = 'white';
                     ctx.fillText(name, left + 12, top + height - 6);
                     
