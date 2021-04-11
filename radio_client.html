@@ -63,6 +63,10 @@
                 console.log('click connect');
                 b.innerText = 'Disconnect';
                 socket = io.connect();
+
+                var room = window.location.pathname;
+                socket.emit('joinRoom', room);
+
                 console.log('socket connected');
                 socket.on('keyDown', function (key) {
                     console.log(key);
