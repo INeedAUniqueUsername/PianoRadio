@@ -21,9 +21,11 @@ io.on('connection', function (socket) {
     socket.on('joinRoom', function (data) {
         for (let room in socket.rooms) {
             socket.leave(room);
+            io.to(room).emit('userCount', io.sockets.adapter.rooms.get(room).size)
         }
         room = data;
         socket.join(room);
+        io.to(room).emit('userCount', io.sockets.adapter.rooms.get(room).size)
         console.log('joined room ' + room);
     });
     socket.on('keyDown', function (data) {
@@ -33,6 +35,14 @@ io.on('connection', function (socket) {
     socket.on('keyUp', function (data) {
         console.log('keyUp: ' + data);
         socket.to(room).emit('keyUp', data);
+    });
+
+    socket.on('disconnect', function () {
+        console.log('Got disconnect!');
+        for (let room in socket.rooms) {
+            socket.leave(room);
+            io.to(room).emit('userCount', io.sockets.adapter.rooms.get(room).size)
+        }
     });
 });
 

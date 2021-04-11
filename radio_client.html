@@ -3,30 +3,30 @@
         * {
             margin: 0;
             padding: 0;
-
             font-family: Inconsolata;
         }
+
         html, body {
             width: 100%;
             height: 100%;
         }
-        #content {
-            font-stretch:extra-expanded;
-            line-height:16px;
-            font:bold 16px Inconsolata;
-        }
 
+        #content {
+            font-stretch: extra-expanded;
+            line-height: 16px;
+            font: bold 16px Inconsolata;
+        }
     </style>
 
     <Title> Arch Piano </Title>
 </head>
 <body id="body">
 
-    <div >
+    <div>
 
         <h1 id="title" style="display:inline-block;">Arch Piano</h1>
         <!--<input type="text" placeholder="username" />-->
-        <button  id="connect"  onclick="null"></button>
+        <button id="connect" onclick="null"></button>
     </div>
     <script src="soundfont-player.min.js"></script>
     <script src="https://cdn.socket.io/3.1.3/socket.io.min.js" integrity="sha384-cPwlPLvBTa3sKAgddT6krw0cJat7egBga3DJepJyrLl4Q9/5WLra3rrnMcyTyOnh" crossorigin="anonymous"></script>
@@ -34,7 +34,7 @@
     <canvas id='canvasBack' width='100%' height='100%'></canvas>
 
     <script type="text/javascript">
-      
+
 
         let body = document.getElementById('title');
         body.onclick = function () {
@@ -44,9 +44,11 @@
         }
 
         var socket = null;
-        if(!socket) {
-          console.log('init: no socket');
+        if (!socket) {
+            console.log('init: no socket');
         }
+
+        var userCount = 0;
 
         let b = document.getElementById('connect');
         b.onclick = connect;
@@ -80,6 +82,9 @@
                         keyUp(key);
                     }
                 });
+                socket.on('userCount', function (data) {
+                    userCount = data;
+                });
             }
         }
 
@@ -91,15 +96,16 @@
 
         let replay = [];
         let prevNotes = [];
+        let nextNotes = [];
         let pressTime = {};
         let velocity = [];
         let lastPressedTime = [];
         let lastDownTime = [];
         let pressed = [];
         let node = [];
-        let keyColors = [];
+        let keyColor = [];
 
-        
+
         function connectPiano(device) {
             device.onmidimessage = function (m) {
                 const [command, key, velocity] = m.data;
@@ -111,7 +117,7 @@
                         console.log('sending key ' + key);
                         socket.emit('keyDown', key);
                     } else {
-                      console.log('no socket');
+                        console.log('no socket');
                     }
 
                 } else if (command === 128) {
@@ -125,7 +131,6 @@
             }
         }
         function keyDown(key, vel, local) {
-
             console.log('note down');
 
             if (vel) {
@@ -143,16 +148,15 @@
             pressed[key] = true;
             node[key] = instrument.play(key);
 
-
+            keyColor[key] = `hsl(${360 * Math.random()}, 75%, 75%)`;
             console.log(key);
         }
 
         function keyUp(key) {
             console.log('key up');
 
-
             let now = new Date().getTime();
-            addPrev(key, lastPressedTime[key], now);
+            addPrev(key, lastPressedTime[key], now, keyColor[key]);
 
             lastPressedTime[key] = now;
             //key up
@@ -164,8 +168,8 @@
             console.log(key);
         }
 
-        function addPrev(key, startTime, releaseTime) {
-            prevNotes.push({ number: key, startTime: startTime, releaseTime: releaseTime });
+        function addPrev(key, startTime, releaseTime, color) {
+            prevNotes.push({ key: key, startTime: startTime, releaseTime: releaseTime, color: color });
         }
 
         navigator.requestMIDIAccess()
@@ -193,24 +197,24 @@
         let canvas = document.getElementById('canvasBack');
 
         let ctx = canvas.getContext('2d');
-    
+
         window.requestAnimationFrame(update);
 
         let width = canvas.width = window.innerWidth;
         let height = canvas.height = window.innerHeight;
         let ticks = 0;
-        var background = new Image();
-        background.src = "https://www.fnordware.com/superpng/pnggradHDrgba.png";
-
         
+
         function update() {
             var time = new Date().getTime();
-             ctx.drawImage(background, 0, 0);
-            //ctx.fillStyle = 'black';
-            
-            //ctx.fillRect(0, 0, width, height);
+            //ctx.drawImage(background, 0, 0);
+            ctx.fillStyle = 'rgb(255, 128, 128)';
+
+            ctx.fillRect(0, 0, width, height);
 
 
+            ctx.fillStyle = 'black';
+            ctx.fillText('watchers: ' + userCount, 16, 16);
 
             ticks += 2;
 
@@ -218,27 +222,38 @@
             ctx.textAlign = "center";
             ctx.fillStyle = 'white';
 
-            for (let i = prevNotes.length - 1; i > -1; i--) {
-                let n = prevNotes[i];
-                if (time - n.releaseTime < 5000) {
-                    
+            //Render next notes
+            for (let i = 0; i < nextNotes.length; i++) {
+                let n = nextNotes[i];
+                if (time - n.startTime < 5000) {
                     //console.log(n);
-                    renderBar(n.number, n.startTime, n.releaseTime)
+                    renderBarAbove(n.key, n.startTime, n.releaseTime)
                 } else {
                     break;
                 }
             }
-            for (let i = 1; i < 7; i++) {
-                [0, 2, 4, 5, 7, 9, 11, 1, 3, 6, 10]
-                    .forEach(note => renderNote(i * 12 + note, i, note));
+            //Render previous notes
+            for (let i = prevNotes.length - 1; i > -1; i--) {
+                let n = prevNotes[i];
+                if (time - n.releaseTime < 5000) {
+                    //console.log(n);
+                    renderBarBelow(n.key, n.startTime, n.releaseTime, n.color)
+                } else {
+                    break;
+                }
             }
-            function renderNote(number, octave, note) {
+            //Render all the keys
+            for (let i = 1; i < 9; i++) {
+                [0, 2, 4, 5, 7, 9, 11, 1, 3, 6, 10]
+                    .forEach(note => renderKey(i * 12 + note, i, note));
+            }
+
+            function getKeyInfo(key, octave, note) {
                 let width = 24;
-                let left = octave * (width) * 7;
-                let top = 480;
                 let height = 120;
                 let flatHeight = 60;
-                let name = '';
+                let left = (octave * width * 7);
+
                 switch (note) {
                     case 0://C
                         left += 0;
@@ -294,21 +309,33 @@
                         name = 'B';
                         break;
                 }
-                //piano outline
-                ctx.fillStyle = 'white';
-                ctx.fillRect(left, top, width, height);
+                return [left, height, name];
+            }
 
-                //piano interior
-                ctx.fillStyle = 'black';
-                ctx.fillText(name, left + 12, top + height - 6);
+            function renderKey(key, octave, note) {
+                let width = 24;
+                let top = 480;
 
-                if (pressed[number]) {
+                let left, height, name;
+                [left, height, name] = getKeyInfo(key, octave, note);
+                if (pressed[key]) {
+                    //key outlines
+                    ctx.fillStyle = 'rgb(255, 51, 102)';
+                    ctx.fillRect(left, top, width, height);
+
+                    //pressed key color
+                    ctx.fillStyle = 'rgb(255, 255, 255)';
+                    ctx.fillRect(left + 2, top + 2, width - 4, height - 4);
+
+                    //name the keys
+                    ctx.fillStyle = 'rgb(0, 0, 0)';
+                    ctx.fillText(name, left + 12, top + height - 6);
 
                     //Key highlight
-                    let lastTime = lastPressedTime[number];
+                    let lastTime = lastPressedTime[key];
                     let recent = 100;
-                    if (velocity[number]) {
-                        recent = 100 - velocity[number];
+                    if (velocity[key]) {
+                        recent = 100 - velocity[key];
                     }
 
 
@@ -319,18 +346,25 @@
 
                     }
                     //Piano falling colors
-                    ctx.fillStyle = 'hsl(' + 360 * Math.random() + ', 50%, 50%)';
+                    ctx.fillStyle = keyColor[key];
                     //Bar under key
                     ctx.fillRect(left, top + height, width, (time - lastTime) * bps * 160 / 1000);
                 } else {
-                    //overall piano color
+
+                    //key outlines
                     ctx.fillStyle = 'black';
+                    ctx.fillRect(left, top, width, height);
+
+                    //name the keys
+                    ctx.fillStyle = 'rgb(0, 0, 0)';
+                    ctx.fillText(name, left + 12, top + height - 6);
+
+                    //unpressed key color
+                    ctx.fillStyle = 'rgb(255, 51, 102)';
                     ctx.fillRect(left + 2, top + 2, width - 4, height - 4);
 
 
-
-
-                    let lastTime = lastPressedTime[number];
+                    let lastTime = lastPressedTime[key];
                     let recent = 100;
                     if (lastTime && (time - lastTime) < recent) {
                         ctx.fillStyle = 'rgba(128, 128, 128, ' + ((recent - (time - lastTime)) / recent) + ')';
@@ -341,80 +375,19 @@
                     //Piano Text
                     ctx.fillStyle = 'white';
                     ctx.fillText(name, left + 12, top + height - 6);
-                    
-
-
-
                 }
-
             }
 
-            function renderBar(number, startTime, releaseTime) {
-                let octave = Math.floor(number / 12);
-                let note = number % 12;
+            function renderBarBelow(key, startTime, releaseTime, color) {
+                let octave = Math.floor(key / 12);
+                let note = key % 12;
                 let width = 24;
-                let left = octave * (width) * 7;
                 let top = 480;
-                let height = 120;
-                let flatHeight = 60;
-                let name = '';
-                switch (note) {
-                    case 0://C
-                        left += 0;
-                        name = 'C';
-                        break;
-                    case 1://C#
-                        left += width / 2;
-                        height = flatHeight;
-                        name = 'C#';
-                        break;
-                    case 2://D
-                        left += width;
-                        name = 'D';
-                        break;
-                    case 3://D#
-                        left += (width * 3) / 2;
-                        height = flatHeight;
-                        name = 'D#';
-                        break;
-                    case 4://E
-                        left += width * 2;
-                        name = 'E';
-                        break;
-                    case 5://F
-                        left += width * 3;
-                        name = 'F';
-                        break;
-                    case 6://F#
-                        left += (width * 7) / 2;
-                        height = flatHeight;
-                        name = 'F#';
-                        break;
-                    case 7://G
-                        left += width * 4;
-                        name = 'G';
-                        break;
-                    case 8://G#
-                        left += (width * 9) / 2;
-                        height = flatHeight;
-                        name = 'G#';
-                        break;
-                    case 9://A
-                        left += width * 5;
-                        name = 'A';
-                        break;
-                    case 10://A#
-                        left += (width * 11) / 2;
-                        height = flatHeight;
-                        name = 'A#';
-                        break;
-                    case 11://B
-                        left += width * 6;
-                        name = 'B';
-                        break;
-                }
 
+                let left, height, name;
+                [left, height, name] = getKeyInfo(key, octave, note);
 
+                ctx.fillStyle = color;
                 ctx.fillRect(left,
                     top + height + (time - releaseTime) * bps * 160 / 1000,
                     width,
