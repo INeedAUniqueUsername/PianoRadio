@@ -24,6 +24,7 @@
     <div style="margin-left:16px;">
         <h1 id="title">Piano Radio - A piano on the internet</h1>
         <h2 id="needMidi">You must connect a MIDI device to play</h2>
+
         <h2 id="roomName"></h2>
         <button id="createRoom" onclick="null">Create Room</button>
         <!--<input type="text" placeholder="username" />-->
@@ -128,9 +129,9 @@
 
 
         let createRoom = document.getElementById('createRoom');
-        body.onclick = function () {
+        createRoom.onclick = function () {
             var rand = Math.floor(Math.random() * 1000000);
-            var link = "https://pianoradio-1.silentsonar.repl.co/" + rand;
+            var link = "https://PianoRadio.ineedauniqueuse.repl.co/" + rand;
             window.location.href = link;
 
         }
@@ -174,10 +175,10 @@
                 var room = window.location.pathname;
                 socket.emit('joinRoom', room);
 
-                if (room == '') {
+                if (room == '/') {
                     roomName.innerText = 'You are in the default room.';
                 } else {
-                    roomName.innerText = 'You are in room ' + room;
+                    roomName.innerText = 'You are in room ' + room.replace('/', '');
                 }
 
                 console.log('socket connected');
@@ -230,7 +231,7 @@
 
 
         function connectPiano(device) {
-            
+
             device.onmidimessage = function (m) {
                 const [command, key, velocity] = m.data;
                 console.log('key event: ' + command + ', ' + key + ', ' + velocity);
@@ -330,7 +331,7 @@
         let width = canvas.width = window.innerWidth;
         let height = canvas.height = window.innerHeight;
         let ticks = 0;
-        
+
 
         function update() {
             var time = new Date().getTime();
