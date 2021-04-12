@@ -16,134 +16,154 @@
             line-height: 16px;
             font: bold 16px Inconsolata;
         }
+
+        #canvasBack {
+            width:100%;
+            height:100%;
+        }
     </style>
 
     <title> Piano Radio </title>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 </head>
 <body id="body">
-    <div style="margin-left:16px;">
-        <h1 id="title">Piano Radio - A piano on the internet</h1>
-        <h2 id="needMidi">You must connect a MIDI device to play</h2>
 
-        <h2 id="roomName"></h2>
-        <button id="createRoom" onclick="null">Create Room</button>
-        <!--<input type="text" placeholder="username" />-->
-        <button id="connect" onclick="null" hidden="hidden"></button>
+    <div>
+        <div style="margin-left:32px; float:left;">
+            <h1 id="title">Piano Radio - A piano on the internet</h1>
+            <h2 id="needMidi">You must connect a MIDI device to play</h2>
+
+            <h2 id="roomName"></h2>
+            <button id="defaultRoom" onclick="null">Default Room</button>
+            <button id="createRoom" onclick="null">Create Room</button>
+            <!--<input type="text" placeholder="username" />-->
+            <button id="connect" onclick="null" hidden="hidden"></button>
+        </div>
+        <div style="margin-right:32px; float:right;">
+
+            <h1 id="audioOn">Click to enable audio</h1>
+        </div>
     </div>
+    
+    <hr style="margin:0px 0px 0px 0px; border:0px; height:4px; clear:both;" />
+    <canvas id='canvasBack'></canvas>
+
     <script src="soundfont-player.min.js"></script>
     <script src="https://cdn.socket.io/3.1.3/socket.io.min.js" integrity="sha384-cPwlPLvBTa3sKAgddT6krw0cJat7egBga3DJepJyrLl4Q9/5WLra3rrnMcyTyOnh" crossorigin="anonymous"></script>
-
-    <canvas id='canvasBack' width='100%' height='100%'></canvas>
-
     <script type="text/javascript">
-        let root = 0,
-            second = 2,
-            third = 4,
-            fourth = 5,
-            fifth = 7,
-            sixth = 9,
-            seventh = 11
 
-        let keyC = [root, second, third, fourth, fifth, sixth, seventh];
+        {
+            let root = 0,
+                second = 2,
+                third = 4,
+                fourth = 5,
+                fifth = 7,
+                sixth = 9,
+                seventh = 11
 
-        let I = [root, third, fifth];
-        let i = [root, third - 1, fifth];
-        let ii = [second, fourth, sixth];
-        let iii = [third, fifth, seventh];
-        let IV = [fourth, sixth, root];
-        let iv = [fourth, sixth - 1, root];
-        let V = [fifth, seventh, second];
-        let v = [fifth, seventh - 1, second];
-        let vi = [sixth, root, third];
-        let vii = [seventh, second, fourth];
+            let keyC = [root, second, third, fourth, fifth, sixth, seventh];
 
-        let keyNames = [
-            'C',
-            'C#',
-            'D',
-            'D#',
-            'E',
-            'F',
-            'G',
-            'G#',
-            'A',
-            'A#',
-            'B'
-        ]
-        let chords = {
-            'I': I,
-            'i': i,
-            'ii': ii,
-            'iii': iii,
-            'IV': IV,
-            'iv': iv,
-            'V': V,
-            'v': v,
-            'vi': vi,
-            'vii': vii
-        };
+            let I = [root, third, fifth];
+            let i = [root, third - 1, fifth];
+            let ii = [second, fourth, sixth];
+            let iii = [third, fifth, seventh];
+            let IV = [fourth, sixth, root];
+            let iv = [fourth, sixth - 1, root];
+            let V = [fifth, seventh, second];
+            let v = [fifth, seventh - 1, second];
+            let vi = [sixth, root, third];
+            let vii = [seventh, second, fourth];
 
-        function matchesKey(keyArray, notes) {
-            return notes.every(n => keyArray.includes(n));
-        }
-        function matchesChord(chordArray, notes) {
-            return notes.every(n => chordArray.includes(n));
-        }
-        function getKeyArray(keyBase) {
-            return keyC.map(n => (n + keyBase) % 12);
-        }
-        function findKey(notes) {
-            let matchCount = 0;
-            let matchKey = -1;
-            for (let keyBase = 0; keyBase < 12; keyBase++) {
-                let keyArray = getKeyArray(keyBase);
-                let count = notes.filter(n => keyArray.includes(n % 12));
-                if (count > matchCount) {
-                    matchCount = count;
-                    matchKey = keyBase;
+            let keyNames = [
+                'C',
+                'C#',
+                'D',
+                'D#',
+                'E',
+                'F',
+                'G',
+                'G#',
+                'A',
+                'A#',
+                'B'
+            ]
+            let chords = {
+                'I': I,
+                'i': i,
+                'ii': ii,
+                'iii': iii,
+                'IV': IV,
+                'iv': iv,
+                'V': V,
+                'v': v,
+                'vi': vi,
+                'vii': vii
+            };
+
+            function matchesKey(keyArray, notes) {
+                return notes.every(n => keyArray.includes(n));
+            }
+            function matchesChord(chordArray, notes) {
+                return notes.every(n => chordArray.includes(n));
+            }
+            function getKeyArray(keyBase) {
+                return keyC.map(n => (n + keyBase) % 12);
+            }
+            function findKey(notes) {
+                let matchCount = 0;
+                let matchKey = -1;
+                for (let keyBase = 0; keyBase < 12; keyBase++) {
+                    let keyArray = getKeyArray(keyBase);
+                    let count = notes.filter(n => keyArray.includes(n % 12));
+                    if (count > matchCount) {
+                        matchCount = count;
+                        matchKey = keyBase;
+                    }
+                }
+                return matchKey;
+            }
+            function getChordArray(keyBase, chordArrayBase) {
+                return chordArrayBase.map(n => (n + keyBase) % 12);
+            }
+            function findChord(keyBase, notes) {
+                let matchCount = 0;
+                let matchChord = null;
+                for (let chordName in Object.keys(chords)) {
+                    let chord = chords[chordName];
+                    let chordArray = getChordArray(keyBase, chord);
+                    let count = notes.filter(n => chordArray.includes(n % 12));
+                    if (count > matchCount) {
+                        matchCount = count;
+                        matchChord = chordName;
+                    }
+                }
+                if (matchCount != notes.count) {
+
                 }
             }
-            return matchKey;
-        }
-        function getChordArray(keyBase, chordArrayBase) {
-            return chordArrayBase.map(n => (n + keyBase) % 12);
-        }
-        function findChord(keyBase, notes) {
-            let matchCount = 0;
-            let matchChord = null;
-            for (let chordName in Object.keys(chords)) {
-                let chord = chords[chordName];
-                let chordArray = getChordArray(keyBase, chord);
-                let count = notes.filter(n => chordArray.includes(n % 12));
-                if (count > matchCount) {
-                    matchCount = count;
-                    matchChord = chordName;
-                }
-            }
-            if (matchCount != notes.count) {
 
-            }
+            let currentKey = 'I';
         }
 
-        let currentKey = 'I';
-
-
-        let createRoom = document.getElementById('createRoom');
-        createRoom.onclick = function () {
+        let createRoom = $('#createRoom');
+        createRoom.click(function () {
             var rand = Math.floor(Math.random() * 1000000);
-            var link = "https://PianoRadio.ineedauniqueuse.repl.co/" + rand;
+            var link = window.location.origin;
+            link = link + '/' + rand;
             window.location.href = link;
+        });
 
-        }
+        let defaultRoom = $('#defaultRoom');
+        defaultRoom.click(function () {
+            var link = window.location.origin;
+            window.location.href = link;
+        });
 
-        /*
-        let body = document.getElementById('title');
-        body.onclick = function () {
-            if (socket) {
-                socket.emit('keyDown', 60);
-            }
-        }
-        */
+        let body = $('#body');
+        body.click(function () {
+            $('#audioOn').text('Audio enabled');
+        });
 
         var socket = null;
         if (!socket) {
@@ -155,9 +175,9 @@
         var userCount = 0;
 
 
-        let roomName = document.getElementById('roomName');
-        let b = document.getElementById('connect');
-        b.onclick = connect;
+        let roomName = $('#roomName');
+        let b = $('#connect');
+        b.click(connect);
         connect();
         function connect() {
             if (socket) {
@@ -165,20 +185,20 @@
                 socket.off('keyDown')
                 socket.disconnect();
                 socket = null;
-                b.innerText = 'Connect';
+                b.text('Connect');
                 console.log('click disconnect: ' + socket);
             } else {
                 console.log('click connect');
-                b.innerText = 'Disconnect';
+                b.text('Disconnect');
                 socket = io.connect();
 
                 var room = window.location.pathname;
                 socket.emit('joinRoom', room);
 
                 if (room == '/') {
-                    roomName.innerText = 'You are in the default room.';
+                    roomName.text('You are in the default room.');
                 } else {
-                    roomName.innerText = 'You are in room ' + room.replace('/', '');
+                    roomName.text('You are in room ' + room.replace('/', ''));
                 }
 
                 console.log('socket connected');
@@ -201,13 +221,13 @@
         }
 
 
-        let needMidi = document.getElementById('needMidi');
+        let needMidi = $('#needMidi');
         function updatePiano() {
             if (pianoConnected) {
-                needMidi.innerText = "MIDI device connected";
+                needMidi.text("MIDI device connected.");
             } else {
 
-                needMidi.innerText = "You must connect a MIDI device to play";
+                needMidi.text("You must connect a MIDI device to play");
             }
         }
 
@@ -227,7 +247,7 @@
         let lastDownTime = [];
         let pressed = [];
         let node = [];
-        let keyColor = [];
+        let keyColor = [...Array(12 * 8).keys()].map(key => `hsl(${8 * (360) * key / (12 * 8)}, 75%, 75%)`);
 
 
         function connectPiano(device) {
@@ -273,7 +293,7 @@
             pressed[key] = true;
             node[key] = instrument.play(key);
 
-            keyColor[key] = `hsl(${360 * Math.random()}, 75%, 75%)`;
+            //keyColor[key] = `hsl(${360 * Math.random()}, 75%, 75%)`;
             console.log(key);
         }
 
@@ -374,16 +394,17 @@
             }
             //Render all the keys
             for (let i = 1; i < 9; i++) {
-                [0, 2, 4, 5, 7, 9, 11, 1, 3, 6, 10]
+                [0, 2, 4, 5, 7, 9, 11, 1, 3, 6, 8, 10]
                     .forEach(note => renderKey(i * 12 + note, i, note));
             }
 
             function getKeyInfo(key, octave, note) {
                 let width = 24;
                 let height = 120;
-                let flatHeight = 60;
+                let flatWidth = width * 3 / 4;
+                let flatHeight = height/2;
                 let left = (octave * width * 7);
-
+                let flat = false;
                 switch (note) {
                     case 0://C
                         left += 0;
@@ -391,17 +412,21 @@
                         break;
                     case 1://C#
                         left += width / 2;
+                        width = flatWidth;
                         height = flatHeight;
                         name = 'C#';
+                        flat = true;
                         break;
                     case 2://D
                         left += width;
                         name = 'D';
                         break;
                     case 3://D#
-                        left += (width * 3) / 2;
+                        left += (width * 3) / 2 + width/4;
+                        width = flatWidth;
                         height = flatHeight;
                         name = 'D#';
+                        flat = true;
                         break;
                     case 4://E
                         left += width * 2;
@@ -413,44 +438,52 @@
                         break;
                     case 6://F#
                         left += (width * 7) / 2;
+                        width = flatWidth;
                         height = flatHeight;
                         name = 'F#';
+                        flat = true;
                         break;
                     case 7://G
                         left += width * 4;
                         name = 'G';
                         break;
                     case 8://G#
-                        left += (width * 9) / 2;
+                        left += (width * 9) / 2 + width/8;
+                        width = flatWidth;
                         height = flatHeight;
                         name = 'G#';
+                        flat = true;
                         break;
                     case 9://A
                         left += width * 5;
                         name = 'A';
                         break;
                     case 10://A#
-                        left += (width * 11) / 2;
+                        left += (width * 11) / 2 + width/4;
+                        width = flatWidth;
                         height = flatHeight;
                         name = 'A#';
+                        flat = true;
                         break;
                     case 11://B
                         left += width * 6;
                         name = 'B';
                         break;
                 }
-                return [left, height, name];
+                return [left, width, height, name, flat];
             }
 
             function renderKey(key, octave, note) {
-                let width = 24;
                 let top = 120;
 
-                let left, height, name;
-                [left, height, name] = getKeyInfo(key, octave, note);
+                let left, width, height, name, flat;
+                [left, width, height, name, flat] = getKeyInfo(key, octave, note);
+
+
+                let unpressedColor = flat ? '51, 102, 102' : '255, 51, 102';
                 if (pressed[key]) {
                     //key outlines
-                    ctx.fillStyle = 'rgb(255, 51, 102)';
+                    ctx.fillStyle = `rgb(${unpressedColor})`;
                     ctx.fillRect(left, top, width, height);
 
                     //pressed key color
@@ -463,13 +496,13 @@
 
                     //Key highlight
                     let lastTime = lastPressedTime[key];
-                    let recent = 100;
+                    let recent = 125;
                     if (velocity[key]) {
-                        recent = 100 - velocity[key];
+                        recent = recent - velocity[key];
                     }
 
                     if (lastTime && (time - lastTime) < recent) {
-                        ctx.fillStyle = 'rgba(128, 128, 128, ' + ((recent - (time - lastTime)) / recent) + ')';
+                        ctx.fillStyle = `rgba(${unpressedColor}, ${((recent - (time - lastTime)) / recent)})`;
 
                         ctx.fillRect(left + 2, top + 2, width - 4, height - 4);
                     }
@@ -497,14 +530,19 @@
                     }
                     */
 
-                    ctx.fillStyle = 'rgb(255, 51, 102)';
+                    ctx.fillStyle = `rgb(${unpressedColor})`;
 
                     ctx.fillRect(left + 2, top + 2, width - 4, height - 4);
 
+
+                    //Unpress fade color
                     let lastTime = lastPressedTime[key];
-                    let recent = 100;
+                    let recent = 125;
+                    if (velocity[key]) {
+                        recent = recent - velocity[key];
+                    }
                     if (lastTime && (time - lastTime) < recent) {
-                        ctx.fillStyle = 'rgba(128, 128, 128, ' + ((recent - (time - lastTime)) / recent) + ')';
+                        ctx.fillStyle = `rgba(255, 255, 255, ${((recent - (time - lastTime)) / recent)})`;
 
                         ctx.fillRect(left + 2, top + 2, width - 4, height - 4);
                     }
@@ -518,11 +556,10 @@
             function renderBarBelow(key, startTime, releaseTime, color) {
                 let octave = Math.floor(key / 12);
                 let note = key % 12;
-                let width = 24;
                 let top = 120;
 
-                let left, height, name;
-                [left, height, name] = getKeyInfo(key, octave, note);
+                let left, width, height, name;
+                [left, width, height, name] = getKeyInfo(key, octave, note);
 
                 ctx.fillStyle = color;
                 ctx.fillRect(left,
