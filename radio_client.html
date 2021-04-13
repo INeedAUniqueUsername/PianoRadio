@@ -247,7 +247,10 @@
         let lastDownTime = [];
         let pressed = [];
         let node = [];
-        let keyColor = [...Array(12 * 8).keys()].map(key => `hsl(${8 * (360) * key / (12 * 8)}, 75%, 75%)`);
+        let keyColor = [...Array(12 * 8).keys()].map(key =>
+            key % 12 == 0 ? 'rgb(255, 255, 255)' :
+            `hsl(${8 * (360) * key / (12 * 8)}, 75%, 75%)`
+        );
 
 
         function connectPiano(device) {
@@ -382,6 +385,12 @@
                     break;
                 }
             }
+            
+            //Render all the keys
+            for (let i = 1; i < 9; i++) {
+                [0, 2, 4, 5, 7, 9, 11, 1, 3, 6, 8, 10]
+                    .forEach(note => renderKey(i * 12 + note, i, note));
+            }
             //Render previous notes
             for (let i = prevNotes.length - 1; i > -1; i--) {
                 let n = prevNotes[i];
@@ -392,11 +401,7 @@
                     break;
                 }
             }
-            //Render all the keys
-            for (let i = 1; i < 9; i++) {
-                [0, 2, 4, 5, 7, 9, 11, 1, 3, 6, 8, 10]
-                    .forEach(note => renderKey(i * 12 + note, i, note));
-            }
+
 
             function getKeyInfo(key, octave, note) {
                 let width = 24;
