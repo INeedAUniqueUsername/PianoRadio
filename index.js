@@ -15,7 +15,6 @@ app.get('/*', function (req, res) {
 });
 
 io.on('connection', function (socket) {
-
     var room = 'default';
     socket.join(room);
     socket.on('joinRoom', function (data) {
@@ -26,19 +25,18 @@ io.on('connection', function (socket) {
         room = data;
         socket.join(room);
         io.to(room).emit('userCount', io.sockets.adapter.rooms.get(room).size)
-        console.log('joined room ' + room);
+        console.log(`joined room ${room}`);
     });
-    socket.on('keyDown', function (data) {
-        console.log('keyDown: ' + data);
-        socket.to(room).emit('keyDown', data);
+    socket.on('keyDown', function (key) {
+        console.log(`keyDown: (${room}, ${socket.id}, ${key})`);
+        socket.to(room).emit('keyDown', key);
     });
-    socket.on('keyUp', function (data) {
-        console.log('keyUp: ' + data);
-        socket.to(room).emit('keyUp', data);
+    socket.on('keyUp', function (key) {
+        console.log(`keyUp: (${room}, ${socket.id}, ${key})`);
+        socket.to(room).emit('keyUp', key);
     });
-
     socket.on('disconnect', function () {
-        console.log('Got disconnect!');
+        console.log(`disconnected: ${socket.id}`);
         for (let room in socket.rooms) {
             socket.leave(room);
             io.to(room).emit('userCount', io.sockets.adapter.rooms.get(room).size)
