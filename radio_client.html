@@ -126,7 +126,7 @@
                 return notes.every(n => chordArray.includes(n));
             }
             function getKeyArray(keyBase) {
-                return keyC.map(n => (n + keyBase) % 12);
+                return keyC.map(n => (n + 12 - keyBase) % 12);
             }
             function findKey(notes) {
                 let matchCount = 0;
@@ -142,7 +142,7 @@
                 return matchKey;
             }
             function getChordArray(keyBase, chordArrayBase) {
-                return chordArrayBase.map(n => (n + keyBase) % 12);
+                return chordArrayBase.map(n => (n + 12 - keyBase) % 12);
             }
             function findChord(keyBase, notes) {
                 let matchCount = 0;
@@ -299,7 +299,8 @@
                 return `hsl(${8 * (360) * degree / (12 * 8)}, 75%, 75%)`;
             } else {
                 console.log(`off key: ${degree}`);
-                return `hsl(0, 0%, 50%)`;
+                //return `hsl(0, 0%, 50%)`;
+                return `hsl(${8 * (360) * degree / (12 * 8)}, 75%, 25%)`;
             }
         }
 
@@ -535,10 +536,21 @@
                 let left, width, height, name, flat;
                 [left, width, height, name, flat] = getKeyInfo(key, octave, note);
 
+                let degree = key%12;
+                if (keyBase != -1) {
+                    degree = (key + 12 - keyBase) % 12;
+                }
+                let pressedColor = isInKey(degree) ?
+                    '255, 255, 255' :
+                    '153, 153, 153';
 
-                let degree = (key + 12 - keyBase) % 12;
-                let pressedColor = isInKey(degree) ? '255, 255, 255' : '153, 153, 153';
-                let unpressedColor = flat ? '51, 102, 102' : '255, 51, 102';
+                let unpressedColor = null;
+                if (keyBase == -1) {
+                    unpressedColor = flat ? '51, 102, 102' : '255, 51, 102';
+                } else {
+                    unpressedColor = isInKey(degree) ? '255, 51, 102' : '51, 102, 102';
+                }
+
                 if (pressed[key]) {
                     //key outlines
                     ctx.fillStyle = `rgb(${unpressedColor})`;
