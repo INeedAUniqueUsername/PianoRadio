@@ -306,33 +306,6 @@
                 return `hsl(${8 * (360) * degree / (12 * 8)}, 75%, 25%)`;
             }
         }
-
-
-        function connectInput(device) {
-
-            device.onmidimessage = function (m) {
-                const [command, key, velocity] = m.data;
-                console.log('key event: ' + command + ', ' + key + ', ' + velocity);
-                if (command === 144) {
-                    keyDown(key, velocity);
-
-                    if (socket) {
-                        console.log('sending key ' + key);
-                        socket.emit('keyDown', key);
-                    } else {
-                        console.log('no socket');
-                    }
-
-                } else if (command === 128) {
-                    if (socket) {
-                        console.log('sending key ' + key);
-                        socket.emit('keyUp', key);
-                    }
-
-                    keyUp(key);
-                }
-            }
-        }
         function keyDown(key, vel, local) {
             console.log('note down');
 
@@ -378,6 +351,33 @@
             prevNotes.push({ key: key, startTime: startTime, releaseTime: releaseTime, color: color });
         }
 
+
+        function connectInput(device) {
+
+            device.onmidimessage = function (m) {
+                const [command, key, velocity] = m.data;
+                console.log('key event: ' + command + ', ' + key + ', ' + velocity);
+                if (command === 144) {
+                    keyDown(key, velocity);
+
+                    if (socket) {
+                        console.log('sending key ' + key);
+                        socket.emit('keyDown', key);
+                    } else {
+                        console.log('no socket');
+                    }
+
+                } else if (command === 128) {
+                    if (socket) {
+                        console.log('sending key ' + key);
+                        socket.emit('keyUp', key);
+                    }
+
+                    keyUp(key);
+                }
+            }
+        }
+
         navigator.requestMIDIAccess()
             .then(function (access) {
                 console.log('access', access);
@@ -389,7 +389,7 @@
                     console.log('connecting all: ' + access.inputs.values());
                     inputs = Array.from(access.inputs.values());
                     for (let i in inputs) {
-                        console.log('connecting input');
+                        console.log('connecting input: ' + i);
                         connectInput(i);
                     }
 
