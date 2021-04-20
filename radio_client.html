@@ -188,8 +188,6 @@
             console.log('init: no socket');
         }
 
-        let pianoConnected = false;
-
         var userCount = 0;
 
 
@@ -222,14 +220,18 @@
                 console.log('socket connected');
                 socket.on('keyDown', function (key) {
                     console.log(key);
-                    if (instrument) {
-                        keyDown(key);
+                    keyDown(key);
+
+                    for (let o in outputs) {
+                        o.send([144, key, velocity[key]]);
                     }
                 });
                 socket.on('keyUp', function (key) {
                     console.log(key);
-                    if (instrument) {
-                        keyUp(key);
+                    keyUp(key);
+
+                    for (let o in outputs) {
+                        o.send([128, key, velocity[key]]);
                     }
                 });
                 socket.on('userCount', function (data) {
@@ -241,7 +243,7 @@
 
         let needMidi = $('#needMidi');
         function updatePiano() {
-            if (pianoConnected) {
+            if (inputs.length > 0) {
                 needMidi.text("MIDI device connected.");
             } else {
 
@@ -255,7 +257,8 @@
             instrument = piano;
             console.log('soundfont registered: ' + piano);
         })
-
+        let inputs = [];
+        let outputs = [];
         let replay = [];
         let prevNotes = [];
         let nextNotes = [];
@@ -305,7 +308,7 @@
         }
 
 
-        function connectPiano(device) {
+        function connectInput(device) {
 
             device.onmidimessage = function (m) {
                 const [command, key, velocity] = m.data;
@@ -346,7 +349,10 @@
 
             lastPressedTime[key] = new Date().getTime();
             pressed[key] = true;
-            node[key] = instrument.play(key);
+
+            if (instrument) {
+                node[key] = instrument.play(key);
+            }
 
             //keyColor[key] = `hsl(${360 * Math.random()}, 75%, 75%)`;
             console.log(key);
@@ -361,7 +367,7 @@
             lastPressedTime[key] = now;
             //key up
             pressed[key] = false;
-            if (node[key]) {
+            if (instrument && node[key]) {
                 node[key].stop();
             }
 
@@ -380,15 +386,17 @@
                 }
                 connect();
                 function connect() {
-
                     console.log('connecting all: ' + access.inputs.values());
-                    let values = Array.from(access.inputs.values());
-                    for (let i = 0; i < values.length; i++) {
-                        console.log('connecting piano');
-                        connectPiano(values[i]);
+                    inputs = Array.from(access.inputs.values());
+                    for (let i in inputs) {
+                        console.log('connecting input');
+                        connectInput(i);
                     }
 
-                    pianoConnected = values.length > 0;
+                    outputs = Array.from(access.outputs.values());
+                    for (let o in outputs) {
+                        console.log('connecting output');
+                    }
                     updatePiano();
                 }
             });
