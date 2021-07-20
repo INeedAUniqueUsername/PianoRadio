@@ -22,13 +22,10 @@
             height:100%;
         }
     </style>
-
     <title> Piano Radio </title>
-
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 </head>
 <body id="body">
-
     <div>
         <div style="margin-left:32px; float:left;">
             <h1 id="title">Piano Radio - A piano on the internet</h1>
@@ -160,10 +157,8 @@
 
                 }
             }
-
             let currentKey = 'I';
         }
-
         let createRoom = $('#createRoom');
         createRoom.click(function () {
             var rand = Math.floor(Math.random() * 1000000);
@@ -171,26 +166,20 @@
             link = link + '/' + rand;
             window.location.href = link;
         });
-
         let defaultRoom = $('#defaultRoom');
         defaultRoom.click(function () {
             var link = window.location.origin;
             window.location.href = link;
         });
-
         let body = $('#body');
         body.click(function () {
             $('#audioOn').text('Audio enabled');
         });
-
         var socket = null;
         if (!socket) {
             console.log('init: no socket');
         }
-
         var userCount = 0;
-
-
         let roomName = $('#roomName');
         let b = $('#connect');
         b.click(connect);
@@ -239,8 +228,6 @@
                 });
             }
         }
-
-
         let needMidi = $('#needMidi');
         function updatePiano() {
             if (inputs.length > 0) {
@@ -250,8 +237,6 @@
                 needMidi.text("You must connect a MIDI device to play");
             }
         }
-
-
         var instrument;
         Soundfont.instrument(new AudioContext(), 'acoustic_grand_piano').then(function (piano) {
             instrument = piano;
@@ -274,11 +259,7 @@
             `hsl(${8 * (360) * key / (12 * 8)}, 75%, 75%)`
         );
         */
-
-
-
         let keyBase = -1;
-
         $('#setkey').change(function () {
             keyBase = this.value;
             console.log(`set key: ${this.value}`);
@@ -295,10 +276,8 @@
                 console.log(degree);
                 if (degree == root) {
                     return 'rgb(255, 51, 102)';
-
                     //return `hsl(0, 100%, 25%)`;
                 }
-
                 return `hsl(${8 * (360) * degree / (12 * 8)}, 75%, 75%)`;
             } else {
                 console.log(`off key: ${degree}`);
@@ -308,18 +287,14 @@
         }
         function keyDown(key, vel, local) {
             console.log('note down');
-
             if (vel) {
                 velocity[key] = vel;
             }
-
             if (pressed[key]) {
                 let now = new Date().getTime();
                 addPrev(key, lastPressedTime[key], now, getKeyColor(key));
             }
-
             //key down
-
             lastPressedTime[key] = new Date().getTime();
             pressed[key] = true;
 
@@ -333,10 +308,8 @@
 
         function keyUp(key) {
             console.log('key up');
-
             let now = new Date().getTime();
             addPrev(key, lastPressedTime[key], now, getKeyColor(key));
-
             lastPressedTime[key] = now;
             //key up
             pressed[key] = false;
@@ -346,12 +319,9 @@
 
             console.log(key);
         }
-
         function addPrev(key, startTime, releaseTime, color) {
             prevNotes.push({ key: key, startTime: startTime, releaseTime: releaseTime, color: color });
         }
-
-
         function connectInput(device) {
 
             device.onmidimessage = function (m) {
@@ -400,37 +370,24 @@
                     updatePiano();
                 }
             });
-
-
         let bpm = 60;
         let bps = bpm / 60;
-
         let canvas = document.getElementById('canvasBack');
-
         let ctx = canvas.getContext('2d');
-
         window.requestAnimationFrame(update);
-
         let width = canvas.width = window.innerWidth;
         let height = canvas.height = window.innerHeight;
         let ticks = 0;
-
-
         function update() {
             var time = new Date().getTime();
             //ctx.drawImage(background, 0, 0);
             ctx.fillStyle = 'rgb(255, 128, 128)';
-
             ctx.fillRect(0, 0, width, height);
-
-
             ctx.font = `${16}px Inconsolata`;
             ctx.textAlign = "left";
             ctx.fillStyle = 'black';
             ctx.fillText('watchers: ' + userCount, 16, 16);
-
             ticks += 2;
-
             ctx.font = `${16}px Inconsolata`;
             ctx.textAlign = "center";
             ctx.fillStyle = 'white';
@@ -445,7 +402,6 @@
                     break;
                 }
             }
-            
             //Render all the keys
             for (let i = 1; i < 9; i++) {
                 [0, 2, 4, 5, 7, 9, 11, 1, 3, 6, 8, 10]
@@ -461,8 +417,6 @@
                     break;
                 }
             }
-
-
             function getKeyInfo(key, octave, note) {
                 let width = 24;
                 let height = 120;
@@ -598,16 +552,6 @@
                     //name the keys
                     ctx.fillStyle = 'rgb(0, 0, 0)';
                     ctx.fillText(name, left + 12, top + height - 6);
-
-                    //unpressed key color
-                    /*
-                    if (pianoConnected) {
-
-                        ctx.fillStyle = 'rgb(255, 51, 102)';
-                    } else {
-                        ctx.fillStyle = 'rgb(128, 128, 128)';
-                    }
-                    */
 
                     ctx.fillStyle = `rgb(${unpressedColor})`;
 
