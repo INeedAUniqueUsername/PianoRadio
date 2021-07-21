@@ -14,9 +14,22 @@ app.get('/*', function (req, res) {
 
 });
 
+let metronomes = {};
+
 io.on('connection', function (socket) {
     var room = 'default';
     socket.join(room);
+
+    socket.on('metronome', function(data) {
+        let bpm = data;
+        if(metronomes[room]) {
+            clearInterval(metronomes[room]);
+        }
+        metronomes[room] = setInterval(function() {
+            io.to(room).emit('beat');
+        }, 60 * 1000 / bpm);
+    });
+
     socket.on('joinRoom', function (data) {
         for (let room in socket.rooms) {
             socket.leave(room);
